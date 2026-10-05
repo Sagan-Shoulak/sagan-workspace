@@ -154,9 +154,51 @@ def status(checkout_dir: Path, entries: list[dict]) -> int:
     return result
 
 
+def restore_lock(checkout_dir: Path, entries: list[dict]) -> int:
+    for entry in entries:
+        target = checkout_dir / entry["checkout"]
+        if not target.exists() and not target.is_symlink():
+            if bootstrap(checkout_dir, [entry]):
+                return 1
+            continue
+        if target.is_symlink() or not target.is_dir():
+            print(f"{entry['id']}: unsafe or non-directory checkout")
+            return 1
+        try:
+            inside = git("-C", str(target), "rev-parse", "--show-toplevel")
+            if Path(inside).resolve() != target.resolve():
+                print(f"{entry['id']}: directory is inside another Git checkout")
+                return 1
+            origin = git("-C", str(target), "remote", "get-url", "origin")
+            if origin != entry["url"]:
+                print(f"{entry['id']}: origin URL differs from the workspace manifest")
+                return 1
+            if git("-C", str(target), "status", "--porcelain", "--untracked-files=all"):
+                print(f"{entry['id']}: dirty checkout; preserve your work before restoring")
+                return 1
+            head = git("-C", str(target), "rev-parse", "HEAD")
+            if head == entry["commit"]:
+                print(f"{entry['id']}: already at locked commit {head[:12]}")
+                continue
+            try:
+                git("-C", str(target), "cat-file", "-e", f"{entry['commit']}^{{commit}}")
+            except RuntimeError:
+                print(f"{entry['id']}: fetching locked commit {entry['commit'][:12]}", flush=True)
+                git("-C", str(target), "fetch", "--no-tags", "origin", entry["commit"])
+            git("-C", str(target), "checkout", "--detach", "--no-overwrite-ignore", entry["commit"])
+        except RuntimeError as error:
+            print(f"{entry['id']}: {error}", file=sys.stderr)
+            return 1
+        good, message = inspect(target, entry)
+        print(f"{entry['id']}: {message}")
+        if not good:
+            return 1
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("bootstrap", "status"))
+    parser.add_argument("command", choices=("bootstrap", "status", "restore-lock"))
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--lock", type=Path)
@@ -168,6 +210,8 @@ def main() -> int:
         checkout_dir, entries = load_contract(root, manifest_path, lock_path)
         if arguments.command == "bootstrap":
             return bootstrap(checkout_dir, entries)
+        if arguments.command == "restore-lock":
+            return restore_lock(checkout_dir, entries)
         return status(checkout_dir, entries)
     except (OSError, RuntimeError, ValueError, tomllib.TOMLDecodeError) as error:
         print(f"Workspace {arguments.command} failed: {error}", file=sys.stderr)

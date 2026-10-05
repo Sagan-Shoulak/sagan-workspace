@@ -27,7 +27,9 @@ Bootstrap clones a missing active repository and detaches at the lock SHA;
 status compares its origin, working-tree cleanliness, and HEAD. The strict
 origin check prevents a coincidentally matching commit from silently standing
 in for a different owner. An existing checkout is treated as user work and is
-never auto-reset or auto-deleted. A clone or checkout failure leaves any
+never auto-reset or auto-deleted. Restore-lock explicitly moves only clean,
+correct-origin checkouts to the pin and refuses to overwrite ignored files.
+A clone or checkout failure leaves any
 partial directory for inspection. The Bash entry points are thin wrappers so
 Windows, Linux, and macOS share the same rules.
 
@@ -36,7 +38,7 @@ extension, docs, physics, rendering, and game checkouts. Those repositories
 must not import source code from this workspace to build their own products.
 The current candidate has only exact checkout bootstrap/status; package-index
 generation, editor workspace generation, lock refresh, build, focused tests,
-full integration tests, and lock restoration remain later milestones in
+and full integration tests remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 
 The lock is about source compatibility. Release manifests and Sagan package

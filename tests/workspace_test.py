@@ -107,6 +107,50 @@ class WorkspaceTest(unittest.TestCase):
         run("remote", "set-url", "origin", "https://example.invalid/other.git", cwd=target)
         self.assertEqual(1, workspace.status(checkouts, entries))
         self.assertEqual(1, workspace.bootstrap(checkouts, entries))
+        self.assertEqual(1, workspace.restore_lock(checkouts, entries))
+        self.assertEqual(self.commit, run("rev-parse", "HEAD", cwd=target))
+
+    def test_restore_fetches_new_lock_without_discarding_work(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        (self.source / "example.txt").write_text("second revision\n", encoding="utf-8")
+        run("add", "example.txt", cwd=self.source)
+        run("-c", "commit.gpgsign=false", "-c", "user.name=Sagan Test",
+            "-c", "user.email=test@example.invalid", "commit", "-m", "Second fixture",
+            cwd=self.source)
+        second = run("rev-parse", "HEAD", cwd=self.source)
+        self.write_contract(commit=second)
+        checkouts, entries = self.load()
+        target = checkouts / "sagan"
+        self.assertEqual(1, workspace.status(checkouts, entries))
+        self.assertEqual(0, workspace.restore_lock(checkouts, entries))
+        self.assertEqual(second, run("rev-parse", "HEAD", cwd=target))
+        self.assertEqual(0, workspace.restore_lock(checkouts, entries))
+
+    def test_restore_refuses_dirty_checkout(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        (target / "my-work.txt").write_text("keep me\n", encoding="utf-8")
+        self.assertEqual(1, workspace.restore_lock(checkouts, entries))
+        self.assertEqual("keep me\n", (target / "my-work.txt").read_text(encoding="utf-8"))
+
+    def test_restore_refuses_to_overwrite_ignored_file(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        (self.source / "collision.txt").write_text("tracked new version\n", encoding="utf-8")
+        run("add", "collision.txt", cwd=self.source)
+        run("-c", "commit.gpgsign=false", "-c", "user.name=Sagan Test",
+            "-c", "user.email=test@example.invalid", "commit", "-m", "New file",
+            cwd=self.source)
+        second = run("rev-parse", "HEAD", cwd=self.source)
+        self.write_contract(commit=second)
+        checkouts, entries = self.load()
+        (target / ".git" / "info" / "exclude").write_text("collision.txt\n", encoding="utf-8")
+        (target / "collision.txt").write_text("precious ignored data\n", encoding="utf-8")
+        self.assertEqual(1, workspace.restore_lock(checkouts, entries))
+        self.assertEqual("precious ignored data\n", (target / "collision.txt").read_text(encoding="utf-8"))
         self.assertEqual(self.commit, run("rev-parse", "HEAD", cwd=target))
 
     def test_lock_must_match_active_manifest(self) -> None:

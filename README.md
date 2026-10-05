@@ -14,6 +14,7 @@ From Git Bash, with Python 3.11+ and Git installed:
 ```bash
 bash scripts/bootstrap.sh
 bash scripts/status.sh
+bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p workspace_test.py -v
 ```
 
@@ -21,6 +22,8 @@ Bootstrap clones into gitignored `checkouts/` and detaches each active
 checkout at its pinned commit. It never deletes an existing checkout or
 overwrites a dirty, wrong-origin, or wrong-commit checkout. Status is
 read-only and returns nonzero until all active checkouts match the lock.
+Restore-lock fetches and detaches a clean, correctly owned checkout at the
+pin; it refuses dirty work and ignored-file collisions.
 
 Read [MAINTAINERS.md](MAINTAINERS.md) for the exact operating and recovery
 workflow, [TECHNOLOGY.md](TECHNOLOGY.md) for the conceptual model, and

@@ -22,8 +22,9 @@ Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:
 ```bash
 bash scripts/bootstrap.sh
 bash scripts/status.sh
+bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p workspace_test.py -v
-bash -n scripts/bootstrap.sh scripts/status.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh
 ```
 
 `bootstrap.sh` and `status.sh` accept `--root`, `--manifest`, and `--lock` for
@@ -32,6 +33,18 @@ every active checkout is clean, has the manifest's exact origin URL, and is at
 its locked commit. A missing, dirty, wrong-origin, or wrong-commit checkout
 returns nonzero. No command here pushes, tags, changes a remote, or deletes a
 checkout.
+
+`restore-lock.sh` accepts the same options. It clones a missing checkout;
+otherwise it requires the exact manifest origin and a clean working tree,
+fetches a missing locked commit without tags, and detaches HEAD at that
+commit. It does not reset or discard tracked/untracked work. Git is instructed
+not to overwrite ignored files; a collision fails and leaves HEAD unchanged.
+It may change files in a clean child checkout, so inspect status and the lock
+before invoking it. It does not change remote settings or push.
+When more than one repository is active, restoration is sequential rather
+than atomic: if a later checkout fails, earlier clean checkouts may already
+be at their pins. Run `bash scripts/status.sh` and inspect the failure before
+retrying; do not assume an all-or-nothing rollback.
 
 The root manifest is `workspace.toml`; the tested
 source lock is `workspace.lock`; child repositories live under gitignored
@@ -69,7 +82,8 @@ suite is not authorization to publish.
   manifest. Correct the intended owner deliberately; do not auto-retarget.
 - `HEAD differs`: inspect `git -C checkouts/<name> log -1 --oneline` and the
   lock. Preserve any work; choose whether to update the lock after integration
-  verification or explicitly checkout the pinned commit in that child.
+  verification or run `bash scripts/restore-lock.sh` to select the pinned
+  commit in a clean child.
 - `clone` or `checkout` failed: inspect the reported partial directory and
   network/credentials. Do not overwrite it automatically. If it contains
   useful state, back it up before a manual recovery.
@@ -82,6 +96,6 @@ recreated from the remotes if those remotes and commit objects remain available,
 but their unpushed user work cannot be recreated by this script.
 
 The eventual maintainer guide must add exact package-index/editor generation,
-workspace build/test/update/lock/restore syntax, clean-machine drills,
+workspace build/test/update/lock-refresh syntax, clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.
