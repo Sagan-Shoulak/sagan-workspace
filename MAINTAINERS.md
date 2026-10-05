@@ -22,10 +22,12 @@ Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:
 ```bash
 bash scripts/bootstrap.sh
 bash scripts/status.sh
+bash scripts/update.sh
+bash scripts/lock.sh
 bash scripts/editor-workspace.sh
 bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
 `bootstrap.sh` and `status.sh` accept `--root`, `--manifest`, and `--lock` for
@@ -34,6 +36,24 @@ every active checkout is clean, has the manifest's exact origin URL, and is at
 its locked commit. A missing, dirty, wrong-origin, or wrong-commit checkout
 returns nonzero. No command here pushes, tags, changes a remote, or deletes a
 checkout.
+
+`update.sh` requires every active checkout to match the lock first. It fetches
+only the manifest's `default_branch` from each exact origin with `--no-tags`,
+reports the fetched tip, and leaves HEAD and `workspace.lock` unchanged. It
+requires network; with several active repositories, fetches are sequential,
+not atomic. Inspect any partial success before retrying.
+
+`lock.sh` previews a proposed lock from clean children at their fetched
+`origin/dev` tips. It refuses a dirty or wrong-origin child, a tip that is not
+descended from the old lock, and a lock with extra release/artifact fields
+that this first generator cannot preserve. The preview changes no file.
+After running the focused build, tests, and integration checks at every
+candidate revision, use `bash scripts/lock.sh --write` to atomically replace
+`workspace.lock`; inspect and commit its diff with the test evidence. The
+command does not run those checks for you. It only works after you have
+deliberately selected each reviewed remote tip in the corresponding clean
+child checkout. If a child should remain at its old pin, do not advance the
+lock merely because a newer remote tip exists.
 
 `editor-workspace.sh` requires every active checkout to pass the same exact
 origin, clean-tree, and locked-HEAD checks as `status.sh`. It writes ignored
@@ -95,6 +115,13 @@ suite is not authorization to publish.
   lock. Preserve any work; choose whether to update the lock after integration
   verification or run `bash scripts/restore-lock.sh` to select the pinned
   commit in a clean child.
+- `update` failed after an earlier child fetched: the earlier child remains
+  at its locked HEAD. Run `bash scripts/status.sh`, inspect the failed
+  remote/network, and retry after resolution; do not infer an atomic fetch.
+- `lock` refused a candidate: inspect origin, status, fetched `origin/dev`,
+  and ancestry against the old pin. Do not force-push or rewrite the lock to
+  hide a divergent candidate. Preserve a copy of any reviewed prior lock
+  before a deliberate version migration.
 - `clone` or `checkout` failed: inspect the reported partial directory and
   network/credentials. Do not overwrite it automatically. If it contains
   useful state, back it up before a manual recovery.
@@ -152,11 +179,11 @@ Focused verification for a catalog change is:
 
 ```bash
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
 The eventual maintainer guide must add exact
-workspace build/test/update/lock-refresh syntax, clean-machine drills,
+workspace build/test syntax, clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.
 The draft `.github/workflows/workspace-checks.yml` runs the offline contract

@@ -32,6 +32,13 @@ correct-origin checkouts to the pin and refuses to overwrite ignored files.
 A clone or checkout failure leaves any
 partial directory for inspection. The Bash entry points are thin wrappers so
 Windows, Linux, and macOS share the same rules.
+Update fetches the manifest's normal branch without moving a child HEAD or
+rewriting `workspace.lock`. Lock refresh accepts only a clean checkout at
+the fetched remote branch tip that descends from the current pin. It previews
+by default; an explicit write atomically records the reviewed SHA. A child
+must be built and tested at its candidate revision before that write. The
+current minimal lock format has no extra release/artifact fields; lock
+refresh refuses to discard such fields if they appear later.
 The editor generator reads the same validated active set and checks each
 checkout before writing a VS Code multi-root file under ignored `build/`.
 Its folder paths are relative to the generated file, so the workspace root
@@ -52,8 +59,8 @@ workspace lock or a package release.
 
 An offline contract workflow is drafted for GitHub-hosted Linux, Windows,
 and macOS runners, but it cannot be confirmed as passing in an independent
-destination until that destination exists. Lock refresh, build
-orchestration, hosted cross-repository CI, and full
+destination until that destination exists. Build orchestration, hosted
+cross-repository CI, and full
 integration tests remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 

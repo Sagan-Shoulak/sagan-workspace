@@ -128,6 +128,61 @@ class WorkspaceTest(unittest.TestCase):
             json.loads(output.read_text(encoding="utf-8")),
         )
 
+    def test_update_fetches_without_moving_checkout_or_lock(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        before = self.lock.read_text(encoding="utf-8")
+        (self.source / "example.txt").write_text("second revision\n", encoding="utf-8")
+        run("add", "example.txt", cwd=self.source)
+        run("-c", "commit.gpgsign=false", "-c", "user.name=Sagan Test",
+            "-c", "user.email=test@example.invalid", "commit", "-m", "Second fixture",
+            cwd=self.source)
+        second = run("rev-parse", "HEAD", cwd=self.source)
+
+        self.assertEqual(0, workspace.update(checkouts, entries, "dev"))
+        self.assertEqual(second, run("rev-parse", "refs/remotes/origin/dev", cwd=target))
+        self.assertEqual(self.commit, run("rev-parse", "HEAD", cwd=target))
+        self.assertEqual(before, self.lock.read_text(encoding="utf-8"))
+
+    def test_lock_previews_then_records_reviewed_remote_tip(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        (self.source / "example.txt").write_text("second revision\n", encoding="utf-8")
+        run("add", "example.txt", cwd=self.source)
+        run("-c", "commit.gpgsign=false", "-c", "user.name=Sagan Test",
+            "-c", "user.email=test@example.invalid", "commit", "-m", "Second fixture",
+            cwd=self.source)
+        second = run("rev-parse", "HEAD", cwd=self.source)
+        self.assertEqual(0, workspace.update(checkouts, entries, "dev"))
+        with self.assertRaisesRegex(ValueError, "not the fetched origin/dev tip"):
+            workspace.refresh_lock(checkouts, entries, "dev", self.lock, False)
+
+        run("checkout", "--detach", second, cwd=target)
+        before = self.lock.read_text(encoding="utf-8")
+        self.assertTrue(workspace.refresh_lock(checkouts, entries, "dev", self.lock, False))
+        self.assertEqual(before, self.lock.read_text(encoding="utf-8"))
+        self.assertTrue(workspace.refresh_lock(checkouts, entries, "dev", self.lock, True))
+        self.assertIn(second, self.lock.read_text(encoding="utf-8"))
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.status(checkouts, entries))
+        self.assertFalse(workspace.refresh_lock(checkouts, entries, "dev", self.lock, False))
+
+    def test_lock_refuses_dirty_or_extended_fields(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        (target / "personal.txt").write_text("do not discard\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "dirty checkout"):
+            workspace.refresh_lock(checkouts, entries, "dev", self.lock, True)
+        self.assertIn(self.commit, self.lock.read_text(encoding="utf-8"))
+        (target / "personal.txt").unlink()
+        with self.lock.open("a", encoding="utf-8") as stream:
+            stream.write('version = "4.9.5"\n')
+        with self.assertRaisesRegex(ValueError, "extended fields"):
+            workspace.refresh_lock(checkouts, entries, "dev", self.lock, True)
+
     def test_dirty_and_wrong_commit_are_not_overwritten(self) -> None:
         checkouts, entries = self.load()
         self.assertEqual(0, workspace.bootstrap(checkouts, entries))

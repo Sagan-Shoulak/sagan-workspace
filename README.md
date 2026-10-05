@@ -14,6 +14,8 @@ From Git Bash, with Python 3.11+ and Git installed:
 ```bash
 bash scripts/bootstrap.sh
 bash scripts/status.sh
+bash scripts/update.sh
+bash scripts/lock.sh
 bash scripts/editor-workspace.sh
 bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p '*_test.py' -v
@@ -25,6 +27,9 @@ overwrites a dirty, wrong-origin, or wrong-commit checkout. Status is
 read-only and returns nonzero until all active checkouts match the lock.
 Restore-lock fetches and detaches a clean, correctly owned checkout at the
 pin; it refuses dirty work and ignored-file collisions.
+Update fetches the current `dev` tip without moving any checkout or lock.
+Lock previews clean, fast-forward `origin/dev` tips and changes the lock only
+with `bash scripts/lock.sh --write` after focused compatibility checks.
 Editor-workspace generates ignored `build/sagan.code-workspace` from only
 active, clean, exact-lock checkouts. It does not include planned repositories
 or overwrite a differing editor file without explicit `--force`.
