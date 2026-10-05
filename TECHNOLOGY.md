@@ -36,8 +36,15 @@ Windows, Linux, and macOS share the same rules.
 The dependency direction is outward: the workspace consumes language,
 extension, docs, physics, rendering, and game checkouts. Those repositories
 must not import source code from this workspace to build their own products.
-The current candidate has only exact checkout bootstrap/status; package-index
-generation, editor workspace generation, lock refresh, build, focused tests,
+The current candidate also combines the installed package rows from the
+physics and rendering component catalogs into one generated index. It
+rebases each manifest path under a common root, validates manifest identity,
+and rejects duplicate package versions or paths escaping that root. Locked
+mode requires clean, exact-revision active checkouts; explicit component mode
+is for local extraction rehearsals only. The generated index is not a
+workspace lock or a package release.
+
+Editor workspace generation, lock refresh, build orchestration, hosted CI,
 and full integration tests remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 

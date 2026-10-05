@@ -23,8 +23,8 @@ Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:
 bash scripts/bootstrap.sh
 bash scripts/status.sh
 bash scripts/restore-lock.sh
-python -m unittest discover -s tests -p workspace_test.py -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh
+python -m unittest discover -s tests -p '*_test.py' -v
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
 `bootstrap.sh` and `status.sh` accept `--root`, `--manifest`, and `--lock` for
@@ -95,7 +95,56 @@ backup runbook before any further remote migration. Generated checkouts can be
 recreated from the remotes if those remotes and commit objects remain available,
 but their unpushed user work cannot be recreated by this script.
 
-The eventual maintainer guide must add exact package-index/editor generation,
+## Combined package catalog and local integration rehearsal
+
+When physics and rendering become active, reviewed entries in both the
+manifest and lock, use this from the workspace root:
+
+```bash
+bash scripts/status.sh
+python scripts/package_index.py --from-lock
+export SAGAN_PACKAGE_INDEX="$(pwd)/.sagan-package-index.tsv"
+```
+
+Today, `--from-lock` deliberately fails because neither split package repo
+is active. Do not activate an uncreated remote to make it pass. For the
+extracted **local candidates only**, put their checkout directories under
+one common parent and provide that parent explicitly. For example, when
+the candidate directories are siblings of this workspace candidate under
+the Sagan monorepo's ignored `build/`:
+
+```bash
+candidate_root="$(cd .. && pwd)"
+physics_dir="$candidate_root/segmentation-physics-functional-20261005"
+render_dir="$candidate_root/segmentation-render-functional-20261005"
+game_dir="$candidate_root/segmentation-game-functional-20261005"
+python scripts/package_index.py --root "$candidate_root" \
+  --output segmentation-package-index.tsv \
+  --component sagan-physics="${physics_dir##*/}" \
+  --component sagan-render="${render_dir##*/}"
+bash scripts/integrated-package-smoke.sh \
+  "$candidate_root/segmentation-package-index.tsv" \
+  /c/Users/joeps/coding/sagan/bin/sagan.exe \
+  "$physics_dir" "$render_dir" "$game_dir"
+```
+
+The generator refuses a differing existing output unless `--force` is
+specified, checks package manifest names/versions and path containment,
+and rejects duplicate package identities. The smoke script runs the game,
+three headless physics checks, and on Windows only, two auto-closing native
+render checks against that one catalog. It creates normal ignored test
+outputs inside the candidate checkouts; inspect those paths before any
+cleanup. This is a local compatibility rehearsal, not independent CI or
+permission to publish split repositories.
+
+Focused verification for a catalog change is:
+
+```bash
+python -m unittest discover -s tests -p '*_test.py' -v
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+```
+
+The eventual maintainer guide must add exact editor generation,
 workspace build/test/update/lock-refresh syntax, clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.

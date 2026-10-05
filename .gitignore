@@ -1,5 +1,6 @@
 /checkouts/
 /build/
 /.generated/
+/.sagan-package-index.tsv
 __pycache__/
 .venv/

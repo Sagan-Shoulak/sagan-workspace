@@ -15,7 +15,7 @@ From Git Bash, with Python 3.11+ and Git installed:
 bash scripts/bootstrap.sh
 bash scripts/status.sh
 bash scripts/restore-lock.sh
-python -m unittest discover -s tests -p workspace_test.py -v
+python -m unittest discover -s tests -p '*_test.py' -v
 ```
 
 Bootstrap clones into gitignored `checkouts/` and detaches each active
@@ -24,6 +24,15 @@ overwrites a dirty, wrong-origin, or wrong-commit checkout. Status is
 read-only and returns nonzero until all active checkouts match the lock.
 Restore-lock fetches and detaches a clean, correctly owned checkout at the
 pin; it refuses dirty work and ignored-file collisions.
+
+`scripts/package_index.py` also combines installed package catalogs from
+separately checked-out physics and rendering repos. Its locked mode refuses
+to run until those repos become active, clean, and pinned; the current
+workspace lock intentionally has neither active. A separate explicit
+`--component` mode supports local extraction rehearsals without pretending
+that the planned GitHub repositories exist. The combined catalog is consumed
+through `SAGAN_PACKAGE_INDEX`; see the exact rehearsal command in
+[MAINTAINERS.md](MAINTAINERS.md).
 
 Read [MAINTAINERS.md](MAINTAINERS.md) for the exact operating and recovery
 workflow, [TECHNOLOGY.md](TECHNOLOGY.md) for the conceptual model, and
