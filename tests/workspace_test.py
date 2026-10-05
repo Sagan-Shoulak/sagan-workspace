@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import subprocess
 import sys
@@ -80,6 +81,52 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(self.commit, run("rev-parse", "HEAD", cwd=target))
         self.assertEqual("", run("branch", "--show-current", cwd=target))
         self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+
+    def test_editor_workspace_uses_only_clean_locked_checkouts(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        output = workspace.editor_workspace(self.root, checkouts, entries, False)
+        self.assertEqual(self.root / "build" / "sagan.code-workspace", output)
+        self.assertEqual(
+            {"folders": [
+                {"name": "Sagan workspace", "path": ".."},
+                {"name": "sagan", "path": "../checkouts/sagan"},
+            ]},
+            json.loads(output.read_text(encoding="utf-8")),
+        )
+        self.assertEqual(output, workspace.editor_workspace(self.root, checkouts, entries, False))
+
+        (checkouts / "sagan" / "personal.txt").write_text("keep\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "dirty"):
+            workspace.editor_workspace(self.root, checkouts, entries, True)
+        self.assertEqual(2, len(json.loads(output.read_text(encoding="utf-8"))["folders"]))
+
+    def test_editor_workspace_preserves_differing_output_without_force(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        output = self.root / "build" / "sagan.code-workspace"
+        output.parent.mkdir()
+        output.write_text("my editor choices\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "existing editor workspace differs"):
+            workspace.editor_workspace(self.root, checkouts, entries, False)
+        self.assertEqual("my editor choices\n", output.read_text(encoding="utf-8"))
+        self.assertEqual(output, workspace.editor_workspace(self.root, checkouts, entries, True))
+        self.assertIn("Sagan workspace", output.read_text(encoding="utf-8"))
+
+    def test_editor_workspace_refuses_missing_child_and_skips_planned(self) -> None:
+        checkouts, entries = self.load()
+        with self.assertRaisesRegex(ValueError, "missing"):
+            workspace.editor_workspace(self.root, checkouts, entries, False)
+        self.assertFalse((self.root / "build").exists())
+
+        self.write_contract(state="planned")
+        self.lock.write_text("schema_version = 1\nrepositories = []\n", encoding="utf-8")
+        checkouts, entries = self.load()
+        output = workspace.editor_workspace(self.root, checkouts, entries, False)
+        self.assertEqual(
+            {"folders": [{"name": "Sagan workspace", "path": ".."}]},
+            json.loads(output.read_text(encoding="utf-8")),
+        )
 
     def test_dirty_and_wrong_commit_are_not_overwritten(self) -> None:
         checkouts, entries = self.load()

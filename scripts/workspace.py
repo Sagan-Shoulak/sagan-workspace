@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 import tomllib
 
 
@@ -154,6 +157,51 @@ def status(checkout_dir: Path, entries: list[dict]) -> int:
     return result
 
 
+def editor_workspace(root: Path, checkout_dir: Path, entries: list[dict], force: bool) -> Path:
+    """Generate a VS Code multi-root file from only clean, locked checkouts."""
+    for entry in entries:
+        good, message = inspect(checkout_dir / entry["checkout"], entry)
+        if not good:
+            raise ValueError(f"{entry['id']}: {message}; editor workspace not generated")
+
+    output_dir = root / "build"
+    output = output_dir / "sagan.code-workspace"
+    if output_dir.is_symlink() or (output_dir.exists() and not output_dir.is_dir()):
+        raise ValueError("build output directory is unsafe")
+    if output.is_symlink() or (output.exists() and not output.is_file()):
+        raise ValueError("editor workspace output is unsafe")
+
+    def relative(target: Path) -> str:
+        return Path(os.path.relpath(target, output_dir)).as_posix()
+
+    folders = [{"name": "Sagan workspace", "path": relative(root)}]
+    folders.extend(
+        {"name": entry["id"], "path": relative(checkout_dir / entry["checkout"])}
+        for entry in entries
+    )
+    rendered = json.dumps({"folders": folders}, indent=2) + "\n"
+    if output.exists():
+        if output.read_text(encoding="utf-8") == rendered:
+            return output
+        if not force:
+            raise ValueError(f"existing editor workspace differs: {output}; inspect it before --force")
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", newline="\n", prefix=".sagan-workspace-",
+            suffix=".tmp", dir=output_dir, delete=False,
+        ) as stream:
+            stream.write(rendered)
+            temporary = Path(stream.name)
+        os.replace(temporary, output)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+    return output
+
+
 def restore_lock(checkout_dir: Path, entries: list[dict]) -> int:
     for entry in entries:
         target = checkout_dir / entry["checkout"]
@@ -198,20 +246,26 @@ def restore_lock(checkout_dir: Path, entries: list[dict]) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("bootstrap", "status", "restore-lock"))
+    parser.add_argument("command", choices=("bootstrap", "status", "restore-lock", "editor-workspace"))
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--lock", type=Path)
+    parser.add_argument("--force", action="store_true")
     arguments = parser.parse_args()
     root = arguments.root.resolve()
     manifest_path = arguments.manifest or root / "workspace.toml"
     lock_path = arguments.lock or root / "workspace.lock"
     try:
         checkout_dir, entries = load_contract(root, manifest_path, lock_path)
+        if arguments.force and arguments.command != "editor-workspace":
+            raise ValueError("--force is only valid for editor-workspace")
         if arguments.command == "bootstrap":
             return bootstrap(checkout_dir, entries)
         if arguments.command == "restore-lock":
             return restore_lock(checkout_dir, entries)
+        if arguments.command == "editor-workspace":
+            print(f"Editor workspace ready: {editor_workspace(root, checkout_dir, entries, arguments.force)}")
+            return 0
         return status(checkout_dir, entries)
     except (OSError, RuntimeError, ValueError, tomllib.TOMLDecodeError) as error:
         print(f"Workspace {arguments.command} failed: {error}", file=sys.stderr)

@@ -22,9 +22,10 @@ Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:
 ```bash
 bash scripts/bootstrap.sh
 bash scripts/status.sh
+bash scripts/editor-workspace.sh
 bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
 `bootstrap.sh` and `status.sh` accept `--root`, `--manifest`, and `--lock` for
@@ -33,6 +34,16 @@ every active checkout is clean, has the manifest's exact origin URL, and is at
 its locked commit. A missing, dirty, wrong-origin, or wrong-commit checkout
 returns nonzero. No command here pushes, tags, changes a remote, or deletes a
 checkout.
+
+`editor-workspace.sh` requires every active checkout to pass the same exact
+origin, clean-tree, and locked-HEAD checks as `status.sh`. It writes ignored
+`build/sagan.code-workspace` with the coordinator and active child folders,
+using paths relative to that file. Run it after bootstrap, then open the
+generated file in VS Code. It is idempotent when the file already matches.
+If the existing file differs, inspect your editor customizations first; only
+then use `bash scripts/editor-workspace.sh --force` to replace it. A missing
+or dirty child fails before changing the generated file. The generator does
+not clone, reset, delete, or retarget a child repository.
 
 `restore-lock.sh` accepts the same options. It clones a missing checkout;
 otherwise it requires the exact manifest origin and a clean working tree,
@@ -141,10 +152,10 @@ Focused verification for a catalog change is:
 
 ```bash
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
-The eventual maintainer guide must add exact editor generation,
+The eventual maintainer guide must add exact
 workspace build/test/update/lock-refresh syntax, clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.
