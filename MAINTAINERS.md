@@ -15,6 +15,12 @@ organization governance and CI. The current lock contains only the primary
 `sagan` source pin. No split-repository URL should be activated until that
 repository exists, is backed up, and passes its extraction gate.
 
+The carried `repository-segmentation/` inventories and old monorepo checker
+are historical transfer evidence, not current workspace validation. That
+checker fails explicitly in this standalone candidate. Use the focused
+commands below and its own CI for current operation; retain the historical
+records for audit and recovery context.
+
 ## Prerequisites and exact commands
 
 Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:

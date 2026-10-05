@@ -23,6 +23,15 @@ def run(*arguments: str, cwd: Path) -> str:
 
 
 class WorkspaceTest(unittest.TestCase):
+    def test_historical_monorepo_audit_refuses_standalone_checkout(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(
+            [sys.executable, "scripts/repository_segmentation_check.py"],
+            cwd=root, text=True, capture_output=True, check=False,
+        )
+        self.assertEqual(1, result.returncode)
+        self.assertIn("historical intact-Sagan audit", result.stderr)
+
     def test_checked_in_manifest_matches_lock(self) -> None:
         root = Path(__file__).resolve().parents[1]
         checkouts, entries = workspace.load_contract(

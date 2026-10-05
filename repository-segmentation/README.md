@@ -1,5 +1,14 @@
 # Repository segmentation preparation
 
+> This directory is a transition record in the local `sagan-workspace`
+> candidate. Its transfer inventories, old ownership manifests, and
+> `repository_segmentation_check` script describe the **intact** Sagan
+> monorepo and are not live standalone-workspace checks. Use the root
+> `MAINTAINERS.md`, `workspace.toml`, `workspace.lock`, and the focused
+> `scripts/workspace.py` commands for current workspace operation. Preserve
+> these records for provenance; do not mistake a historical audit result for
+> a current split-repository CI pass.
+
 This directory contains preparation and primary-transfer evidence for separating
 the Sagan monorepo. The intact primary repository moved to
 `Sagan-Shoulak/sagan` on October 5, 2026; no split repository has been created

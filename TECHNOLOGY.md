@@ -15,6 +15,12 @@ normal Git repository. Development, versioning, and release ownership remain
 with that child. The workspace records which exact revisions have been tested
 together and hosts cross-repository examples and compatibility evidence.
 
+The carried `repository-segmentation/` tree is a provenance record from the
+intact monorepo transfer and extraction rehearsals. Its old path manifests
+and transfer audit do not describe the live standalone workspace. The active
+contracts are the root manifest/lock and the focused workspace commands;
+the historical segmentation checker refuses to pass in this candidate.
+
 `workspace.toml` maps stable component IDs to owner
 URLs, local checkout names, and lifecycle states. Only `active` entries are
 bootstrapped. `planned` entries are proposals; `existing-outside-organization`

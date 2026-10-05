@@ -310,6 +310,11 @@ def check_file_manifests() -> None:
 
 def main() -> int:
     try:
+        if not (ROOT / "src" / "parser" / "parser.cpp").is_file() or not (ROOT / "makefile").is_file():
+            raise ValueError(
+                "this is a historical intact-Sagan audit, not a standalone "
+                "workspace check; use scripts/workspace.py and its tests here"
+            )
         check_ecosystem()
         check_chat_map()
         check_inventory()
