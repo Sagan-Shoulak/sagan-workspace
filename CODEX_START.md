@@ -6,7 +6,8 @@ roadmap, and the versioned ecosystem and chat maps. Start read-only: inspect
 branch, HEAD, status, staged paths, concurrent work, and the exact checked-out
 dependencies. Summarize what belongs to this workspace and what belongs to
 each component repository. Ask before broadening scope or changing remote
-state. The current checkout is a local candidate, not a published split.
+state. This is a public split repository; do not mistake its planned
+component entries for published or active dependencies.
 
 Prefer teaching me what to code through small steps, examples, pseudocode,
 review, and verification. Do not implement unless explicitly requested.

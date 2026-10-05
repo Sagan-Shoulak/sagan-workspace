@@ -9,15 +9,16 @@ verified_by: null
 
 # Maintaining the Sagan workspace
 
-This is a local split candidate. Before publication, validate it from a clean
-filtered checkout, specialize the remaining integration commands, and verify
-organization governance and CI. The current lock contains only the primary
-`sagan` source pin. No split-repository URL should be activated until that
-repository exists, is backed up, and passes its extraction gate.
+This public split repository has a verified local extraction and initial
+organization governance. Its current lock contains only the primary `sagan`
+source pin. Before calling it independently complete, verify hosted CI,
+specialize the remaining integration commands, and run the owner handoff and
+rollback drills. No other split-repository URL should be activated until
+that repository exists, is backed up, and passes its extraction gate.
 
 The carried `repository-segmentation/` inventories and old monorepo checker
 are historical transfer evidence, not current workspace validation. That
-checker fails explicitly in this standalone candidate. Use the focused
+checker fails explicitly in this standalone repository. Use the focused
 commands below and its own CI for current operation; retain the historical
 records for audit and recovery context.
 
@@ -196,8 +197,7 @@ bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.s
 
 The eventual maintainer guide must add clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
-without their values. Those capabilities are not implemented in this candidate.
-The draft `.github/workflows/workspace-checks.yml` is the only workflow
-carried into the standalone candidate. It runs the offline contract tests
+without their values. Those capabilities are not implemented here yet.
+The `.github/workflows/workspace-checks.yml` workflow runs offline contract tests
 on Linux, Windows, and macOS without fetching planned split remotes; it
-remains locally reviewed only, not a successful hosted CI run.
+must pass in this repository before hosted CI parity is claimed.

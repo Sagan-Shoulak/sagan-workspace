@@ -19,7 +19,7 @@ The carried `repository-segmentation/` tree is a provenance record from the
 intact monorepo transfer and extraction rehearsals. Its old path manifests
 and transfer audit do not describe the live standalone workspace. The active
 contracts are the root manifest/lock and the focused workspace commands;
-the historical segmentation checker refuses to pass in this candidate.
+the historical segmentation checker refuses to pass in this repository.
 
 `workspace.toml` maps stable component IDs to owner
 URLs, local checkout names, and lifecycle states. Only `active` entries are
@@ -62,7 +62,7 @@ uses `--force`; planned repositories never appear as phantom editor roots.
 The dependency direction is outward: the workspace consumes language,
 extension, docs, physics, rendering, and game checkouts. Those repositories
 must not import source code from this workspace to build their own products.
-The current candidate also combines the installed package rows from the
+The workspace also combines the installed package rows from the
 physics and rendering component catalogs into one generated index. It
 rebases each manifest path under a common root, validates manifest identity,
 and rejects duplicate package versions or paths escaping that root. Locked

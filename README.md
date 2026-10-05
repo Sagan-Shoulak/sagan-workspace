@@ -1,13 +1,15 @@
-# Sagan workspace (local split candidate)
+# Sagan workspace
 
-This checkout is a local rehearsal of the future `sagan-workspace` repository.
-It is not an independently published repository yet. It coordinates ordinary
-sibling Git checkouts at exact commits; it does not own their product code.
+This public repository coordinates ordinary sibling Git checkouts at exact
+commits; it does not own their product code. The initial split preserves the
+historical `repository-segmentation/` archive for provenance. The other
+component repositories are not active yet, and cross-repository independence
+has not been certified.
 
 The current lock activates only the transferred primary `sagan` repository.
 Other entries in `workspace.toml` are planned names,
-not a claim that their GitHub repositories already exist. The source SHA is a
-rehearsal pin, not an automatically updated branch tip.
+not a claim that their GitHub repositories already exist. The source SHA is
+an exact lock pin, not an automatically updated branch tip.
 
 From Git Bash, with Python 3.11+ and Git installed:
 
