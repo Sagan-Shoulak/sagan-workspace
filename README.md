@@ -15,6 +15,8 @@ From Git Bash, with Python 3.11+ and Git installed:
 bash scripts/bootstrap.sh
 bash scripts/status.sh
 bash scripts/update.sh
+bash scripts/build.sh
+bash scripts/test.sh
 bash scripts/lock.sh
 bash scripts/editor-workspace.sh
 bash scripts/restore-lock.sh
@@ -30,6 +32,10 @@ pin; it refuses dirty work and ignored-file collisions.
 Update fetches the current `dev` tip without moving any checkout or lock.
 Lock previews clean, fast-forward `origin/dev` tips and changes the lock only
 with `bash scripts/lock.sh --write` after focused compatibility checks.
+Build compiles the pinned primary compiler and language server. Test runs the
+workspace contracts and the primary package-catalog/resolution tests, not
+the full compiler suite. Future active components must provide their own
+`scripts/workspace-build.sh` and `scripts/workspace-test.sh` entry points.
 Editor-workspace generates ignored `build/sagan.code-workspace` from only
 active, clean, exact-lock checkouts. It does not include planned repositories
 or overwrite a differing editor file without explicit `--force`.

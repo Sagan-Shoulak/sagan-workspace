@@ -23,6 +23,6 @@ jobs:
           python-version: '3.11'
       - name: Check Bash syntax
         shell: bash
-        run: bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+        run: bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.sh scripts/test.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
       - name: Test offline workspace contracts
         run: python -m unittest discover -s tests -p '*_test.py' -v

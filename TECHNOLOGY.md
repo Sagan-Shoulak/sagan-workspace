@@ -39,6 +39,13 @@ by default; an explicit write atomically records the reviewed SHA. A child
 must be built and tested at its candidate revision before that write. The
 current minimal lock format has no extra release/artifact fields; lock
 refresh refuses to discard such fields if they appear later.
+Build and test first require all active sources to match the lock. For the
+current primary source, build compiles the compiler and language server;
+test runs the workspace's offline contracts and the language repository's
+focused package-catalog and package-resolution binaries. Future active
+components execute their own checked-in `scripts/workspace-build.sh` and
+`scripts/workspace-test.sh`; no unreviewed manifest shell command is run.
+Those scripts must exist and be safe before a component is activated.
 The editor generator reads the same validated active set and checks each
 checkout before writing a VS Code multi-root file under ignored `build/`.
 Its folder paths are relative to the generated file, so the workspace root
@@ -59,9 +66,8 @@ workspace lock or a package release.
 
 An offline contract workflow is drafted for GitHub-hosted Linux, Windows,
 and macOS runners, but it cannot be confirmed as passing in an independent
-destination until that destination exists. Build orchestration, hosted
-cross-repository CI, and full
-integration tests remain later milestones in
+destination until that destination exists. Hosted cross-repository CI and
+full integration tests remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 
 The lock is about source compatibility. Release manifests and Sagan package

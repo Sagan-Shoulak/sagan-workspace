@@ -23,11 +23,13 @@ Use Git Bash, Git, and Python 3.11 or newer. From the workspace repository root:
 bash scripts/bootstrap.sh
 bash scripts/status.sh
 bash scripts/update.sh
+bash scripts/build.sh
+bash scripts/test.sh
 bash scripts/lock.sh
 bash scripts/editor-workspace.sh
 bash scripts/restore-lock.sh
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.sh scripts/test.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
 `bootstrap.sh` and `status.sh` accept `--root`, `--manifest`, and `--lock` for
@@ -54,6 +56,18 @@ command does not run those checks for you. It only works after you have
 deliberately selected each reviewed remote tip in the corresponding clean
 child checkout. If a child should remain at its old pin, do not advance the
 lock merely because a newer remote tip exists.
+
+`build.sh` requires every active checkout to be clean at the exact lock.
+For the primary `sagan` checkout it invokes `mingw32-make` on Windows or
+`make` elsewhere for `bin/sagan` and `bin/sagan-lsp`. Use `--make PATH` to
+select a known compatible make executable. `test.sh` runs this workspace's
+offline unit tests, then builds and executes only the primary's focused
+package-catalog and package-resolution test binaries. It does not run the
+full compiler suite. Both commands may create ignored build outputs inside
+the child. Every future active component must provide its own reviewed
+`scripts/workspace-build.sh` and `scripts/workspace-test.sh`; an absent script
+is an error, never a silently skipped component. Component-owned scripts
+run inside their own checkout after exact-lock verification.
 
 `editor-workspace.sh` requires every active checkout to pass the same exact
 origin, clean-tree, and locked-HEAD checks as `status.sh`. It writes ignored
@@ -122,6 +136,10 @@ suite is not authorization to publish.
   and ancestry against the old pin. Do not force-push or rewrite the lock to
   hide a divergent candidate. Preserve a copy of any reviewed prior lock
   before a deliberate version migration.
+- `build` or `test` failed: inspect the failing child, toolchain, and ignored
+  output. Keep its lock pin unchanged and rerun only the affected focused
+  checks after repair; do not delete the child or run the full suite merely
+  to conceal a local prerequisite problem.
 - `clone` or `checkout` failed: inspect the reported partial directory and
   network/credentials. Do not overwrite it automatically. If it contains
   useful state, back it up before a manual recovery.
@@ -179,11 +197,10 @@ Focused verification for a catalog change is:
 
 ```bash
 python -m unittest discover -s tests -p '*_test.py' -v
-bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.sh scripts/test.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
-The eventual maintainer guide must add exact
-workspace build/test syntax, clean-machine drills,
+The eventual maintainer guide must add clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.
 The draft `.github/workflows/workspace-checks.yml` runs the offline contract

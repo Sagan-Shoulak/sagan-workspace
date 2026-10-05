@@ -250,6 +250,48 @@ def refresh_lock(checkout_dir: Path, entries: list[dict], branch: str,
     return True
 
 
+def run_checked(command: list[str], cwd: Path) -> None:
+    print(f"{cwd.name}: running {' '.join(command)}", flush=True)
+    result = subprocess.run(command, cwd=cwd, check=False)
+    if result.returncode:
+        raise RuntimeError(f"{cwd.name}: command failed with exit code {result.returncode}")
+
+
+def operate(root: Path, checkout_dir: Path, entries: list[dict],
+            action: str, make_command: str | None) -> int:
+    """Run only explicit, component-owned focused build/test entry points."""
+    if action not in ("build", "test"):
+        raise ValueError("unsupported workspace operation")
+    if not entries:
+        raise ValueError("workspace build/test requires at least one active repository")
+    if status(checkout_dir, entries):
+        raise ValueError("all active checkouts must match the lock before build/test")
+    if action == "test":
+        run_checked([sys.executable, "-m", "unittest", "discover", "-s", "tests",
+                     "-p", "*_test.py", "-v"], root)
+    for entry in entries:
+        target = checkout_dir / entry["checkout"]
+        if entry["id"] == "sagan":
+            make = make_command or ("mingw32-make" if os.name == "nt" else "make")
+            targets = (["bin/sagan", "bin/sagan-lsp"] if action == "build" else
+                       ["bin/package-catalog-test", "bin/package-resolution-test"])
+            run_checked([make, *targets], target)
+            if action == "test":
+                for binary in ("package-catalog-test", "package-resolution-test"):
+                    executable = target / "bin" / binary
+                    if os.name == "nt" and not executable.is_file():
+                        executable = executable.with_suffix(".exe")
+                    if not executable.is_file():
+                        raise ValueError(f"sagan: expected focused test binary is missing: {binary}")
+                    run_checked([str(executable)], target)
+            continue
+        script = target / "scripts" / f"workspace-{action}.sh"
+        if not script.is_file() or script.is_symlink():
+            raise ValueError(f"{entry['id']}: missing safe component-owned {script.name}")
+        run_checked(["bash", str(script)], target)
+    return 0
+
+
 def editor_workspace(root: Path, checkout_dir: Path, entries: list[dict], force: bool) -> Path:
     """Generate a VS Code multi-root file from only clean, locked checkouts."""
     for entry in entries:
@@ -339,12 +381,13 @@ def restore_lock(checkout_dir: Path, entries: list[dict]) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("bootstrap", "status", "update", "lock", "restore-lock", "editor-workspace"))
+    parser.add_argument("command", choices=("bootstrap", "status", "update", "lock", "build", "test", "restore-lock", "editor-workspace"))
     parser.add_argument("--root", type=Path, default=DEFAULT_ROOT)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--lock", type=Path)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--write", action="store_true")
+    parser.add_argument("--make", dest="make_command")
     arguments = parser.parse_args()
     root = arguments.root.resolve()
     manifest_path = arguments.manifest or root / "workspace.toml"
@@ -355,6 +398,10 @@ def main() -> int:
             raise ValueError("--force is only valid for editor-workspace")
         if arguments.write and arguments.command != "lock":
             raise ValueError("--write is only valid for lock")
+        if arguments.make_command and arguments.command not in ("build", "test"):
+            raise ValueError("--make is only valid for build/test")
+        if arguments.command in ("build", "test"):
+            return operate(root, checkout_dir, entries, arguments.command, arguments.make_command)
         if arguments.command in ("update", "lock"):
             branch = load_toml(manifest_path).get("default_branch")
             if not isinstance(branch, str) or not SLUG.fullmatch(branch):

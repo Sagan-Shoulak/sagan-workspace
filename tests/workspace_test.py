@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import call, patch
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -182,6 +183,45 @@ class WorkspaceTest(unittest.TestCase):
             stream.write('version = "4.9.5"\n')
         with self.assertRaisesRegex(ValueError, "extended fields"):
             workspace.refresh_lock(checkouts, entries, "dev", self.lock, True)
+
+    def test_build_and_test_use_focused_primary_commands(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        with patch.object(workspace, "run_checked") as runner:
+            self.assertEqual(0, workspace.operate(self.root, checkouts, entries, "build", "fixture-make"))
+            runner.assert_called_once_with(
+                ["fixture-make", "bin/sagan", "bin/sagan-lsp"], target
+            )
+
+        (target / ".git" / "info" / "exclude").write_text("bin/\n", encoding="utf-8")
+        binaries = target / "bin"
+        binaries.mkdir()
+        for name in ("package-catalog-test", "package-resolution-test"):
+            (binaries / name).write_text("fixture\n", encoding="utf-8")
+        with patch.object(workspace, "run_checked") as runner:
+            self.assertEqual(0, workspace.operate(self.root, checkouts, entries, "test", "fixture-make"))
+            self.assertEqual([
+                call([sys.executable, "-m", "unittest", "discover", "-s", "tests",
+                      "-p", "*_test.py", "-v"], self.root),
+                call(["fixture-make", "bin/package-catalog-test", "bin/package-resolution-test"], target),
+                call([str(binaries / "package-catalog-test")], target),
+                call([str(binaries / "package-resolution-test")], target),
+            ], runner.call_args_list)
+
+    def test_build_refuses_dirty_or_missing_component_entrypoint(self) -> None:
+        checkouts, entries = self.load()
+        self.assertEqual(0, workspace.bootstrap(checkouts, entries))
+        target = checkouts / "sagan"
+        (target / "personal.txt").write_text("keep\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "must match the lock"):
+            workspace.operate(self.root, checkouts, entries, "build", "fixture-make")
+        (target / "personal.txt").unlink()
+        component = [{**entries[0], "id": "sagan-physics"}]
+        with self.assertRaisesRegex(ValueError, "missing safe component-owned workspace-build.sh"):
+            workspace.operate(self.root, checkouts, component, "build", None)
+        with self.assertRaisesRegex(ValueError, "at least one active repository"):
+            workspace.operate(self.root, checkouts, [], "build", None)
 
     def test_dirty_and_wrong_commit_are_not_overwritten(self) -> None:
         checkouts, entries = self.load()
