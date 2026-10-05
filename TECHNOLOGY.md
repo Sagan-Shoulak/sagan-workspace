@@ -44,8 +44,11 @@ mode requires clean, exact-revision active checkouts; explicit component mode
 is for local extraction rehearsals only. The generated index is not a
 workspace lock or a package release.
 
-Editor workspace generation, lock refresh, build orchestration, hosted CI,
-and full integration tests remain later milestones in
+An offline contract workflow is drafted for GitHub-hosted Linux, Windows,
+and macOS runners, but it cannot be confirmed as passing in an independent
+destination until that destination exists. Editor workspace generation,
+lock refresh, build orchestration, hosted cross-repository CI, and full
+integration tests remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 
 The lock is about source compatibility. Release manifests and Sagan package

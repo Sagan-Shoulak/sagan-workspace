@@ -1,0 +1,28 @@
+name: Workspace checks
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contracts:
+    name: Offline contracts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Bash syntax
+        shell: bash
+        run: bash -n scripts/bootstrap.sh scripts/status.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
+      - name: Test offline workspace contracts
+        run: python -m unittest discover -s tests -p '*_test.py' -v
