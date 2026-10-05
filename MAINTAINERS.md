@@ -169,26 +169,14 @@ export SAGAN_PACKAGE_INDEX="$(pwd)/.sagan-package-index.tsv"
 ```
 
 Today, `--from-lock` deliberately fails because neither split package repo
-is active. Do not activate an uncreated remote to make it pass. For the
-extracted **local candidates only**, put their checkout directories under
-one common parent and provide that parent explicitly. For example, when
-the candidate directories are siblings of this workspace candidate under
-the Sagan monorepo's ignored `build/`:
-
-```bash
-candidate_root="$(cd .. && pwd)"
-physics_dir="$candidate_root/segmentation-physics-functional-20261005"
-render_dir="$candidate_root/segmentation-render-functional-20261005"
-game_dir="$candidate_root/segmentation-game-functional-20261005"
-python scripts/package_index.py --root "$candidate_root" \
-  --output segmentation-package-index.tsv \
-  --component sagan-physics="${physics_dir##*/}" \
-  --component sagan-render="${render_dir##*/}"
-bash scripts/integrated-package-smoke.sh \
-  "$candidate_root/segmentation-package-index.tsv" \
-  /c/Users/joeps/coding/sagan/bin/sagan.exe \
-  "$physics_dir" "$render_dir" "$game_dir"
-```
+is active. Do not activate an uncreated remote to make it pass. The local
+candidate integration rehearsal and its machine-specific paths are recorded
+in the intact primary repository's segmentation evidence, not prescribed as
+standalone workspace operating commands. Once the component repositories
+exist and are locked, replace this provisional procedure with one that
+derives the compiler and package paths from the active lock. Until then,
+pass explicit local candidate paths to `package_index.py` and
+`integrated-package-smoke.sh` only for an isolated rehearsal.
 
 The generator refuses a differing existing output unless `--force` is
 specified, checks package manifest names/versions and path containment,
@@ -209,6 +197,7 @@ bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.s
 The eventual maintainer guide must add clean-machine drills,
 platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
 without their values. Those capabilities are not implemented in this candidate.
-The draft `.github/workflows/workspace-checks.yml` runs the offline contract
-tests on Linux, Windows, and macOS without fetching planned split remotes;
-it remains locally reviewed only, not a successful hosted CI run.
+The draft `.github/workflows/workspace-checks.yml` is the only workflow
+carried into the standalone candidate. It runs the offline contract tests
+on Linux, Windows, and macOS without fetching planned split remotes; it
+remains locally reviewed only, not a successful hosted CI run.
