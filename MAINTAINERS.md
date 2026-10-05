@@ -13,8 +13,8 @@ This public split repository has a verified local extraction and initial
 organization governance. Its current lock contains only the primary `sagan`
 source pin. Before calling it independently complete, verify hosted CI,
 specialize the remaining integration commands, and run the owner handoff and
-rollback drills. No other split-repository URL should be activated until
-that repository exists, is backed up, and passes its extraction gate.
+rollback drills. Before activating a published sibling's URL, validate its
+exact commit, backup/recovery path, and extraction gate.
 
 The carried `repository-segmentation/` inventories and old monorepo checker
 are historical transfer evidence, not current workspace validation. That
