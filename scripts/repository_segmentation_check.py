@@ -295,7 +295,7 @@ def check_schemas_and_templates() -> None:
 
 
 def check_root_contract() -> None:
-    for name in ("README.md", "TECHNOLOGY.md", "MAINTAINERS.md", "CODEX_START.md"):
+    for name in ("README.md", "AGENTS.md", "TECHNOLOGY.md", "MAINTAINERS.md"):
         if not (ROOT / name).is_file():
             fail(f"current repository is missing root contract file {name}")
 

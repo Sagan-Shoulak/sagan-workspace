@@ -7,8 +7,8 @@ component repositories are not active yet, and cross-repository independence
 has not been certified.
 
 The current lock activates only the transferred primary `sagan` repository.
-Other entries in `workspace.toml` are planned names,
-not a claim that their GitHub repositories already exist. The source SHA is
+Other entries in `workspace.toml` remain inactive even though their GitHub
+repositories now exist. The source SHA is
 an exact lock pin, not an automatically updated branch tip.
 
 From Git Bash, with Python 3.11+ and Git installed:
@@ -53,5 +53,6 @@ through `SAGAN_PACKAGE_INDEX`; see the exact rehearsal command in
 
 Read [MAINTAINERS.md](MAINTAINERS.md) for the exact operating and recovery
 workflow, [TECHNOLOGY.md](TECHNOLOGY.md) for the conceptual model, and
-[CODEX_START.md](CODEX_START.md) to orient a new chat. The broader sequence
+`CODEX_START.md` once if it still exists, then `AGENTS.md` for lasting chat
+guidance. The broader sequence
 remains in [the fracture roadmap](docs/contributing/repository-fracturing-roadmap.md).
