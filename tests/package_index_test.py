@@ -48,6 +48,15 @@ class PackageIndexTest(unittest.TestCase):
             self.root, {"physics": "physics", "render": "render"}, "index.tsv", False
         ))
 
+    def test_normalizes_root_before_containment_checks(self) -> None:
+        self.component("physics", "sagan-physics")
+        (self.root / "alias").mkdir()
+        noncanonical_root = self.root / "alias" / ".."
+        output = package_index.generate(
+            noncanonical_root, {"physics": "physics"}, "index.tsv", False
+        )
+        self.assertEqual(self.root.resolve() / "index.tsv", output)
+
     def test_rejects_component_outside_root(self) -> None:
         self.component("physics", "sagan-physics")
         with self.assertRaisesRegex(ValueError, "unsafe relative path"):

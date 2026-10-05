@@ -78,6 +78,7 @@ def generate(root: Path, components: dict[str, str], output: str, force: bool) -
         raise ValueError("output must be one safe filename at the catalog root")
     if not root.is_dir() or root.is_symlink():
         raise ValueError("catalog root must be an existing regular directory")
+    root = root.resolve()
     destination = root / output
     if destination.is_symlink() or (destination.exists() and not destination.is_file()):
         raise ValueError(f"refusing unsafe output: {destination}")
