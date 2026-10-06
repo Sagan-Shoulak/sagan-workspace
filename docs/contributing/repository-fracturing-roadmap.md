@@ -626,8 +626,9 @@ The fracture is complete only when:
 
 - all seven repositories exist under the intended organization;
 - each has independent history, `dev`/`main`, protection, CI, versioning,
-  issues, releases where applicable, `TECHNOLOGY.md`, `MAINTAINERS.md`, and
-  `CODEX_START.md`;
+  issues, releases where applicable, `TECHNOLOGY.md`, and `MAINTAINERS.md`;
+  each one-time tracked `CODEX_START.md` is read by its first specialized
+  chat and then deleted through a reviewed onboarding PR;
 - each technology overview accurately explains the repository's moving parts
   and its conceptual place in the locked ecosystem without depending on chat
   history;

@@ -9,12 +9,10 @@ verified_by: null
 
 # Maintaining the Sagan workspace
 
-This public split repository has a verified local extraction and initial
-organization governance. Its current lock contains only the primary `sagan`
-source pin. Before calling it independently complete, verify hosted CI,
-specialize the remaining integration commands, and run the owner handoff and
-rollback drills. Before activating a published sibling's URL, validate its
-exact commit, backup/recovery path, and extraction gate.
+This public split repository coordinates reviewed exact source revisions for
+the primary language, docs, physics, rendering, and VS Code extension. The
+game is intentionally separate from the default workspace. Source-level
+integration does not lift the release or `main` promotion hold.
 
 The carried `repository-segmentation/` inventories and old monorepo checker
 are historical transfer evidence, not current workspace validation. That
@@ -65,16 +63,17 @@ child checkout. If a child should remain at its old pin, do not advance the
 lock merely because a newer remote tip exists.
 
 `build.sh` requires every active checkout to be clean at the exact lock.
-For the primary `sagan` checkout it invokes `mingw32-make` on Windows or
-`make` elsewhere for `bin/sagan` and `bin/sagan-lsp`. Use `--make PATH` to
-select a known compatible make executable. `test.sh` runs this workspace's
-offline unit tests, then builds and executes only the primary's focused
-package-catalog and package-resolution test binaries. It does not run the
-full compiler suite. Both commands may create ignored build outputs inside
-the child. Every future active component must provide its own reviewed
-`scripts/workspace-build.sh` and `scripts/workspace-test.sh`; an absent script
-is an error, never a silently skipped component. Component-owned scripts
-run inside their own checkout after exact-lock verification.
+It generates the combined package index, builds the primary compiler and
+language server with `mingw32-make` on Windows or `make` elsewhere, then calls
+the docs, physics, rendering, and VS Code component-owned build hooks. Use
+`--make PATH` to select a known compatible make executable. `test.sh` runs
+the workspace's offline contracts, builds the primary compiler and focused
+package-catalog/resolution tests, then calls each component's focused test
+hook. It does not run the full compiler suite. The coordinator supplies
+`SAGAN_EXECUTABLE`, `SAGAN_PACKAGE_INDEX`, and `SAGAN_PYTHON_EXECUTABLE` to
+the hooks. The game is not among these active checkouts. Both commands may
+create ignored build outputs inside children; an absent or unsafe hook is an
+error, never a silently skipped component.
 
 `editor-workspace.sh` requires every active checkout to pass the same exact
 origin, clean-tree, and locked-HEAD checks as `status.sh`. It writes ignored
@@ -160,8 +159,8 @@ but their unpushed user work cannot be recreated by this script.
 
 ## Combined package catalog and local integration rehearsal
 
-When physics and rendering become active, reviewed entries in both the
-manifest and lock, use this from the workspace root:
+Physics and rendering are active at reviewed exact revisions. To inspect or
+regenerate their combined package catalog from the workspace root:
 
 ```bash
 bash scripts/status.sh
@@ -169,24 +168,20 @@ python scripts/package_index.py --from-lock
 export SAGAN_PACKAGE_INDEX="$(pwd)/.sagan-package-index.tsv"
 ```
 
-Today, `--from-lock` deliberately fails because neither split package repo
-is active. Do not activate an uncreated remote to make it pass. The local
-candidate integration rehearsal and its machine-specific paths are recorded
-in the intact primary repository's segmentation evidence, not prescribed as
-standalone workspace operating commands. Once the component repositories
-exist and are locked, replace this provisional procedure with one that
-derives the compiler and package paths from the active lock. Until then,
-pass explicit local candidate paths to `package_index.py` and
-`integrated-package-smoke.sh` only for an isolated rehearsal.
+`build.sh` and `test.sh` invoke this generator automatically and pass the
+result to component hooks. If a different generated catalog already exists,
+the generator refuses to overwrite it; inspect before a deliberate
+`python scripts/package_index.py --from-lock --force`. The explicit
+`--component` mode remains for isolated extraction rehearsals.
 
 The generator refuses a differing existing output unless `--force` is
 specified, checks package manifest names/versions and path containment,
-and rejects duplicate package identities. The smoke script runs the game,
-three headless physics checks, and on Windows only, two auto-closing native
-render checks against that one catalog. It creates normal ignored test
-outputs inside the candidate checkouts; inspect those paths before any
-cleanup. This is a local compatibility rehearsal, not independent CI or
-permission to publish split repositories.
+and rejects duplicate package identities. The optional
+`integrated-package-smoke.sh` includes the separate game, three headless
+physics checks, and on Windows two auto-closing native render checks against
+one catalog. The default workspace build/test omits the game deliberately.
+These checks create ignored outputs inside candidate checkouts; inspect
+those paths before any cleanup. Neither check authorizes publication.
 
 Focused verification for a catalog change is:
 
@@ -195,9 +190,9 @@ python -m unittest discover -s tests -p '*_test.py' -v
 bash -n scripts/bootstrap.sh scripts/status.sh scripts/update.sh scripts/build.sh scripts/test.sh scripts/lock.sh scripts/editor-workspace.sh scripts/restore-lock.sh scripts/integrated-package-smoke.sh
 ```
 
-The eventual maintainer guide must add clean-machine drills,
-platform-specific compiler prerequisites, cross-repo rollback, and CI secrets
-without their values. Those capabilities are not implemented here yet.
-The `.github/workflows/workspace-checks.yml` workflow runs offline contract tests
-on Linux, Windows, and macOS without fetching planned split remotes; it
-must pass in this repository before hosted CI parity is claimed.
+Clean-machine drills, platform-specific compiler prerequisites, cross-repo
+rollback, and CI secrets without their values still need a dedicated owner
+handoff exercise. The `.github/workflows/workspace-checks.yml` workflow runs
+offline contracts on Linux, Windows, and macOS; it does not build all five
+active sources. The exact-lock five-repo build/test is the local integration
+check until hosted aggregate validation is added.

@@ -38,8 +38,8 @@ class WorkspaceTest(unittest.TestCase):
             root, root / "workspace.toml", root / "workspace.lock"
         )
         self.assertEqual(root / "checkouts", checkouts)
-        self.assertEqual(["sagan"], [entry["id"] for entry in entries])
-        self.assertEqual(40, len(entries[0]["commit"]))
+        self.assertIn("sagan", [entry["id"] for entry in entries])
+        self.assertTrue(all(len(entry["commit"]) == 40 for entry in entries))
 
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory(prefix="sagan-workspace-test-")
@@ -213,7 +213,7 @@ class WorkspaceTest(unittest.TestCase):
             self.assertEqual([
                 call([sys.executable, "-m", "unittest", "discover", "-s", "tests",
                       "-p", "*_test.py", "-v"], self.root),
-                call(["fixture-make", "bin/package-catalog-test", "bin/package-resolution-test"], target),
+                call(["fixture-make", "bin/sagan", "bin/package-catalog-test", "bin/package-resolution-test"], target),
                 call([str(binaries / "package-catalog-test")], target),
                 call([str(binaries / "package-resolution-test")], target),
             ], runner.call_args_list)
@@ -226,11 +226,41 @@ class WorkspaceTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must match the lock"):
             workspace.operate(self.root, checkouts, entries, "build", "fixture-make")
         (target / "personal.txt").unlink()
-        component = [{**entries[0], "id": "sagan-physics"}]
-        with self.assertRaisesRegex(ValueError, "missing safe component-owned workspace-build.sh"):
-            workspace.operate(self.root, checkouts, component, "build", None)
+        component = [entries[0], {**entries[0], "id": "sagan-docs"}]
+        with patch.object(workspace, "run_checked"):
+            with self.assertRaisesRegex(ValueError, "missing safe component-owned workspace-build.sh"):
+                workspace.operate(self.root, checkouts, component, "build", None)
         with self.assertRaisesRegex(ValueError, "at least one active repository"):
             workspace.operate(self.root, checkouts, [], "build", None)
+
+    def test_component_build_receives_locked_compiler_and_catalog(self) -> None:
+        checkouts = self.root / "checkouts"
+        primary = checkouts / "sagan"
+        physics = checkouts / "sagan-physics"
+        (physics / "scripts").mkdir(parents=True)
+        (physics / "scripts" / "workspace-build.sh").write_text("#!/usr/bin/env bash\n", encoding="utf-8")
+        entries = [{"id": "sagan", "checkout": "sagan"},
+                   {"id": "sagan-physics", "checkout": "sagan-physics"}]
+        with patch.object(workspace, "status", return_value=0), patch.object(
+            workspace, "run_checked"
+        ) as runner:
+            self.assertEqual(0, workspace.operate(self.root, checkouts, entries,
+                                                  "build", "fixture-make"))
+        self.assertEqual(3, runner.call_count)
+        self.assertIn("package_index.py", runner.call_args_list[0].args[0][1])
+        self.assertEqual(["fixture-make", "bin/sagan", "bin/sagan-lsp"],
+                         runner.call_args_list[1].args[0])
+        child_call = runner.call_args_list[2]
+        self.assertEqual(["bash", str(physics / "scripts" / "workspace-build.sh")],
+                         child_call.args[0])
+        environment = child_call.args[2]
+        compiler = primary / "bin" / "sagan"
+        if workspace.os.name == "nt":
+            compiler = compiler.with_suffix(".exe")
+        self.assertEqual(str(compiler), environment["SAGAN_EXECUTABLE"])
+        self.assertEqual(str(self.root / ".sagan-package-index.tsv"),
+                         environment["SAGAN_PACKAGE_INDEX"])
+        self.assertEqual(sys.executable, environment["SAGAN_PYTHON_EXECUTABLE"])
 
     def test_dirty_and_wrong_commit_are_not_overwritten(self) -> None:
         checkouts, entries = self.load()

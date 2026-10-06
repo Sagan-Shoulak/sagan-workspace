@@ -45,13 +45,15 @@ by default; an explicit write atomically records the reviewed SHA. A child
 must be built and tested at its candidate revision before that write. The
 current minimal lock format has no extra release/artifact fields; lock
 refresh refuses to discard such fields if they appear later.
-Build and test first require all active sources to match the lock. For the
-current primary source, build compiles the compiler and language server;
-test runs the workspace's offline contracts and the language repository's
-focused package-catalog and package-resolution binaries. Future active
-components execute their own checked-in `scripts/workspace-build.sh` and
-`scripts/workspace-test.sh`; no unreviewed manifest shell command is run.
-Those scripts must exist and be safe before a component is activated.
+Build and test first require all active sources to match the lock. The
+coordinator generates the combined package index, builds the pinned compiler
+and language server, and passes their paths to the component-owned Bash
+hooks. The docs hook also receives the coordinator's Python executable.
+Focused test runs workspace contracts, language package-catalog and
+package-resolution binaries, and each active component's own test hook; no
+unreviewed manifest shell command is run. Component hooks must exist before
+activation. This source-level workflow does not imply installed-artifact or
+release validation.
 The editor generator reads the same validated active set and checks each
 checkout before writing a VS Code multi-root file under ignored `build/`.
 Its folder paths are relative to the generated file, so the workspace root
@@ -70,10 +72,9 @@ mode requires clean, exact-revision active checkouts; explicit component mode
 is for local extraction rehearsals only. The generated index is not a
 workspace lock or a package release.
 
-An offline contract workflow is drafted for GitHub-hosted Linux, Windows,
-and macOS runners, but it cannot be confirmed as passing in an independent
-destination until that destination exists. Hosted cross-repository CI and
-full integration tests remain later milestones in
+An offline contract workflow runs on GitHub-hosted Linux, Windows, and macOS.
+Each component also has independent focused CI. Installed-artifact and
+release validation remain later milestones in
 [the roadmap](docs/contributing/repository-fracturing-roadmap.md).
 
 The lock is about source compatibility. Release manifests and Sagan package
