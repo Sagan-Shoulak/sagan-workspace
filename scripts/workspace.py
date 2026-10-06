@@ -250,9 +250,9 @@ def refresh_lock(checkout_dir: Path, entries: list[dict], branch: str,
     return True
 
 
-def run_checked(command: list[str], cwd: Path) -> None:
+def run_checked(command: list[str], cwd: Path, env: dict[str, str] | None = None) -> None:
     print(f"{cwd.name}: running {' '.join(command)}", flush=True)
-    result = subprocess.run(command, cwd=cwd, check=False)
+    result = subprocess.run(command, cwd=cwd, env=env, check=False)
     if result.returncode:
         raise RuntimeError(f"{cwd.name}: command failed with exit code {result.returncode}")
 
@@ -266,6 +266,24 @@ def operate(root: Path, checkout_dir: Path, entries: list[dict],
         raise ValueError("workspace build/test requires at least one active repository")
     if status(checkout_dir, entries):
         raise ValueError("all active checkouts must match the lock before build/test")
+    primary = next((entry for entry in entries if entry["id"] == "sagan"), None)
+    if primary is None:
+        raise ValueError("workspace build/test requires an active Sagan compiler")
+    package_entries = [entry for entry in entries if entry["id"] in ("sagan-physics", "sagan-render")]
+    if package_entries:
+        run_checked([sys.executable, str(Path(__file__).with_name("package_index.py")),
+                     "--root", str(root), "--from-lock"], root)
+    compiler = checkout_dir / primary["checkout"] / "bin" / "sagan"
+    if os.name == "nt":
+        compiler = compiler.with_suffix(".exe")
+    child_env = os.environ.copy()
+    child_env.update({
+        "SAGAN_EXECUTABLE": str(compiler),
+        "SAGAN_PYTHON_EXECUTABLE": sys.executable,
+        "SAGAN_WORKSPACE_ROOT": str(root),
+    })
+    if package_entries:
+        child_env["SAGAN_PACKAGE_INDEX"] = str(root / ".sagan-package-index.tsv")
     if action == "test":
         run_checked([sys.executable, "-m", "unittest", "discover", "-s", "tests",
                      "-p", "*_test.py", "-v"], root)
@@ -274,7 +292,7 @@ def operate(root: Path, checkout_dir: Path, entries: list[dict],
         if entry["id"] == "sagan":
             make = make_command or ("mingw32-make" if os.name == "nt" else "make")
             targets = (["bin/sagan", "bin/sagan-lsp"] if action == "build" else
-                       ["bin/package-catalog-test", "bin/package-resolution-test"])
+                       ["bin/sagan", "bin/package-catalog-test", "bin/package-resolution-test"])
             run_checked([make, *targets], target)
             if action == "test":
                 for binary in ("package-catalog-test", "package-resolution-test"):
@@ -288,7 +306,7 @@ def operate(root: Path, checkout_dir: Path, entries: list[dict],
         script = target / "scripts" / f"workspace-{action}.sh"
         if not script.is_file() or script.is_symlink():
             raise ValueError(f"{entry['id']}: missing safe component-owned {script.name}")
-        run_checked(["bash", str(script)], target)
+        run_checked(["bash", str(script)], target, child_env)
     return 0
 
 

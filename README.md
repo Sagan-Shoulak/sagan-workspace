@@ -2,14 +2,13 @@
 
 This public repository coordinates ordinary sibling Git checkouts at exact
 commits; it does not own their product code. The initial split preserves the
-historical `repository-segmentation/` archive for provenance. The other
-component repositories are not active yet, and cross-repository independence
-has not been certified.
+historical `repository-segmentation/` archive for provenance. The primary
+language, official docs, physics, rendering, and VS Code extension are active
+at reviewed source pins. The game stays separate from the default workspace.
 
-The current lock activates only the transferred primary `sagan` repository.
-Other entries in `workspace.toml` remain inactive even though their GitHub
-repositories now exist. The source SHA is
-an exact lock pin, not an automatically updated branch tip.
+The source SHAs in `workspace.lock` are exact pins, not automatically updated
+branch tips. `sagan-workspace` itself and `sagan-space-game` remain planned in
+the manifest rather than being recursively bootstrapped.
 
 From Git Bash, with Python 3.11+ and Git installed:
 
@@ -34,20 +33,20 @@ pin; it refuses dirty work and ignored-file collisions.
 Update fetches the current `dev` tip without moving any checkout or lock.
 Lock previews clean, fast-forward `origin/dev` tips and changes the lock only
 with `bash scripts/lock.sh --write` after focused compatibility checks.
-Build compiles the pinned primary compiler and language server. Test runs the
-workspace contracts and the primary package-catalog/resolution tests, not
-the full compiler suite. Future active components must provide their own
-`scripts/workspace-build.sh` and `scripts/workspace-test.sh` entry points.
+Build compiles the pinned primary compiler and language server, creates the
+combined physics/rendering package index, and calls each active component's
+own `scripts/workspace-build.sh`. Test runs the workspace contracts, focused
+primary package tests, and each component's `scripts/workspace-test.sh`, not
+the full compiler suite. The coordinator supplies exact compiler, index, and
+Python paths to those hooks.
 Editor-workspace generates ignored `build/sagan.code-workspace` from only
 active, clean, exact-lock checkouts. It does not include planned repositories
 or overwrite a differing editor file without explicit `--force`.
 
 `scripts/package_index.py` also combines installed package catalogs from
-separately checked-out physics and rendering repos. Its locked mode refuses
-to run until those repos become active, clean, and pinned; the current
-workspace lock intentionally has neither active. A separate explicit
-`--component` mode supports local extraction rehearsals without pretending
-that the planned GitHub repositories exist. The combined catalog is consumed
+separately checked-out physics and rendering repos. Its locked mode requires
+both to be active, clean, and pinned. A separate explicit `--component` mode
+supports isolated extraction rehearsals. The combined catalog is consumed
 through `SAGAN_PACKAGE_INDEX`; see the exact rehearsal command in
 [MAINTAINERS.md](MAINTAINERS.md).
 

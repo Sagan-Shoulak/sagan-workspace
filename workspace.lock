@@ -3,4 +3,24 @@ schema_version = 1
 [[repositories]]
 id = "sagan"
 url = "https://github.com/Sagan-Shoulak/sagan.git"
-commit = "4132c8c37f99dc5f89c7141f5780b583b64d192e"
+commit = "361027d7835ada3d7f9d6b699cce93ef45b5e053"
+
+[[repositories]]
+id = "sagan-docs"
+url = "https://github.com/Sagan-Shoulak/sagan-docs.git"
+commit = "f98a13945426c5069918f48bd02d96bc41c299da"
+
+[[repositories]]
+id = "sagan-physics"
+url = "https://github.com/Sagan-Shoulak/sagan-physics.git"
+commit = "9a2058bcb9d8deccc0f92bae7bde60079d383efc"
+
+[[repositories]]
+id = "sagan-render"
+url = "https://github.com/Sagan-Shoulak/sagan-render.git"
+commit = "6d6286a5da476502c5a821dd5442c6badf5a2511"
+
+[[repositories]]
+id = "sagan-vscode"
+url = "https://github.com/Sagan-Shoulak/sagan-vscode.git"
+commit = "4aaa59d8b1a2c49138506e9d4054507d2560121b"
