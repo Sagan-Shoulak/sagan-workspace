@@ -1,0 +1,35 @@
+schema_version = 1
+
+[[artifacts]]
+id = "sagan-toolchain"
+version = "4.9.5"
+platform = "windows-x64"
+source_commit = "72047d8fce713a188c73b201ce7a81ef6b67c31a"
+url = "https://github.com/Sagan-Shoulak/sagan/releases/download/v4.9.5/sagan-4.9.5-windows-x64.zip"
+sha256 = "f62f25076e229ab0f57b58d6f58c54ff61a57240195db7424a49699c09fc1adf"
+
+[[artifacts]]
+id = "sagan-vscode"
+version = "0.3.6-split-dev.1"
+platform = "vscode-1.85+"
+source_commit = "e1547dc7fc7a5206e4cc25113f823fabf7763d7f"
+url = "https://github.com/Sagan-Shoulak/sagan-vscode/releases/download/vscode-0.3.6-split-dev.1/sagan-language-0.3.6.vsix"
+sha256 = "80e12f096a78fbbd45fa90ee31a4c6834472f187d3ccedb67660fbe5e43462b8"
+
+[[artifacts]]
+id = "sagan-physics"
+version = "0.3.0-dev.845671e62e96"
+platform = "windows-x64-installed"
+source_commit = "845671e62e96d6a7198ca3f466bd010e384c435a"
+compiler_compatibility = "^4.0.0"
+url = "https://github.com/Sagan-Shoulak/sagan-physics/releases/download/v0.3.0-dev.845671e62e96/sagan-physics-0.3.0-dev.845671e62e96.zip"
+sha256 = "0c8a54fb11a9080fef6f83b74fb7abbf71a8703b172e33849676492ca6db46a2"
+
+[[artifacts]]
+id = "sagan-render"
+version = "0.5.1-dev.1"
+platform = "windows-x64"
+source_commit = "82dd426a0c11073013d612dcd8a207021bd6c0ed"
+compiler_compatibility = "^4.0.0"
+url = "https://github.com/Sagan-Shoulak/sagan-render/releases/download/v0.5.1-dev.1/sagan-render-0.5.1-dev.1-windows-source.zip"
+sha256 = "25fd8d31e73b33b2dde2cddfe00b0eb448c706f4268d2eb50032ad85a6afcedf"
