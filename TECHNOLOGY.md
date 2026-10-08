@@ -72,6 +72,10 @@ mode requires clean, exact-revision active checkouts; explicit component mode
 is for local extraction rehearsals only. The generated index is not a
 workspace lock or a package release.
 
+Windowed integration demos also consume compiler-owned application branding.
+They query the exact locked compiler with `--application-icon` and never copy
+canonical icon assets into this coordinator.
+
 An offline contract workflow runs on GitHub-hosted Linux, Windows, and macOS.
 Each component also has independent focused CI. Installed-artifact and
 release validation remain later milestones in

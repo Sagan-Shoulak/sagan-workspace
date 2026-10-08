@@ -183,6 +183,13 @@ one catalog. The default workspace build/test omits the game deliberately.
 These checks create ignored outputs inside candidate checkouts; inspect
 those paths before any cleanup. Neither check authorizes publication.
 
+The integrated two-body window is the workspace reuse check for the
+compiler-owned application-icon contract. Its build asks the locked compiler
+for `--application-icon windows` and links that returned resource; the
+workspace owns no icon copy. A missing compiler resource must fail with the
+compiler's rebuild/reinstall diagnostic rather than falling back to a sibling
+source path.
+
 Focused verification for a catalog change is:
 
 ```bash
