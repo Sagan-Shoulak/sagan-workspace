@@ -35,6 +35,10 @@ if [[ "$fast_final" != *"final_elapsed 2 day"* ||
 fi
 
 test -s "$capture"
+if [[ "${OS:-}" == "Windows_NT" ]]; then
+  windres build/two-body-demo/two-body-demo.exe -O rc -o build/two-body-demo/resources.rc
+  grep -q 'RT_GROUP_ICON' build/two-body-demo/resources.rc
+fi
 dimensions="$(od -An -j18 -N8 -t d4 "$capture" | tr -s ' ' | sed 's/^ //')"
 if [[ "$dimensions" != "960 -540" ]]; then
   echo "Expected a 960x540 top-down BMP, got '$dimensions'." >&2
